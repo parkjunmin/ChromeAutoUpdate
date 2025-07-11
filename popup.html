@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>크롬 자동 업데이트</title>
+  <style>
+    :root {
+      --primary: #667eea;
+      --primary-dark: #5a67d8;
+      --secondary: #e2e8f0;
+      --secondary-dark: #cbd5e0;
+      --success: #48bb78;
+      --success-dark: #38a169;
+      --error: #f56565;
+      --warning: #ed8936;
+      --info: #4299e1;
+      --bg-primary: rgba(255, 255, 255, 0.95);
+      --bg-secondary: #f7fafc;
+      --text-primary: #333;
+      --text-secondary: #718096;
+      --border: #e2e8f0;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: rgba(45, 55, 72, 0.95);
+      --bg-secondary: #2d3748;
+      --text-primary: #e2e8f0;
+      --text-secondary: #a0aec0;
+      --border: #4a5568;
+      --secondary: #4a5568;
+      --secondary-dark: #2d3748;
+    }
+    
+    body {
+      width: 350px;
+      padding: 15px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
+      color: white;
+      margin: 0;
+    }
+    
+    .container {
+      background: var(--bg-primary);
+      border-radius: 10px;
+      padding: 20px;
+      color: var(--text-primary);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    h3 {
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 18px;
+    }
+    
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .theme-toggle:hover {
+      background: var(--secondary);
+    }
+    
+    .chrome-info {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 15px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    input[type="number"] {
+      width: 100%;
+      padding: 8px 12px;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: border-color 0.3s;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+    
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+    
+    .btn-primary:disabled {
+      background: #a0aec0;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-secondary {
+      background: var(--secondary);
+      color: var(--text-primary);
+    }
+    
+    .btn-secondary:hover {
+      background: var(--secondary-dark);
+      transform: translateY(-1px);
+    }
+    
+    .btn-check {
+      background: var(--success);
+      color: white;
+      width: 100%;
+      margin-top: 10px;
+      position: relative;
+    }
+    
+    .btn-check:hover {
+      background: var(--success-dark);
+      transform: translateY(-1px);
+    }
+    
+    .btn-check:disabled {
+      background: #a0aec0;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .shortcut-hint {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+    
+    #status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      text-align: center;
+      border-left: 4px solid var(--primary);
+      background: var(--bg-secondary);
+      min-height: 20px;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+      display: none;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), #764ba2);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    
+    .countdown {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 5px;
+      text-align: center;
+      display: none;
+    }
+    
+    .settings-panel {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .settings-buttons {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    
+    .btn-small {
+      padding: 6px 10px;
+      font-size: 12px;
+      white-space: nowrap;
+      min-width: 78px;
+    }
+    
+    .btn-small:hover {
+      background: var(--secondary);
+      border-color: var(--secondary-dark);
+    }
+    
+    .version-info {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+    
+    .preset-buttons {
+      display: flex;
+      gap: 5px;
+      margin-top: 8px;
+    }
+    
+    .preset-btn {
+      padding: 4px 8px;
+      font-size: 11px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .preset-btn:hover {
+      background: var(--secondary);
+      border-color: var(--secondary-dark);
+    }
+    
+    .preset-btn:active {
+      background: var(--secondary-dark);
+    }
+    
+    .stats-info {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-top: 5px;
+    }
+    
+    .connection-status {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--error);
+      transition: background 0.3s;
+    }
+    
+    .connection-status.connected {
+      background: var(--success);
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 5px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .accessibility-info {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-top: 10px;
+      text-align: center;
+    }
+    
+    /* 고대비 모드 지원 */
+    @media (prefers-contrast: high) {
+      .container {
+        border: 2px solid var(--text-primary);
+      }
+      
+      button {
+        border: 1px solid var(--text-primary);
+      }
+    }
+    
+    /* 애니메이션 감소 지원 */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+    
+    /* 알람 상태 표시 스타일 */
+    .alarm-status {
+      background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+      border: 2px solid #2196f3;
+      border-radius: 12px;
+      padding: 12px;
+      margin: 10px 0;
+      animation: pulse-gentle 2s infinite;
+    }
+    
+    .alarm-status.active {
+      background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+      border-color: #4caf50;
+    }
+    
+    .alarm-indicator {
+      font-weight: bold;
+      color: #2e7d32;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .alarm-details {
+      font-size: 11px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* 백그라운드 상태 표시 스타일 */
+    .background-status {
+      background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%);
+      border: 1px solid #ff9800;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 8px 0;
+      animation: fadeInOut 5s ease-in-out;
+    }
+    
+    .background-indicator {
+      color: #e65100;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    
+    .background-note {
+      color: #666;
+      font-size: 10px;
+      font-style: italic;
+    }
+    
+    /* 알람 상태 애니메이션 */
+    @keyframes pulse-gentle {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.02); opacity: 0.95; }
+    }
+    
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(-5px); }
+      20%, 80% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-5px); }
+    }
+    
+    /* 다크 모드에서 알람 상태 스타일 */
+    [data-theme="dark"] .alarm-status {
+      background: linear-gradient(135deg, #3b1e1e 0%, #1e3a8a 100%);
+      border-color: #ff5555;
+      color: #fff;
+    }
+    
+    [data-theme="dark"] .alarm-status.active {
+      background: linear-gradient(135deg, #0f4c75 0%, #065f46 100%);
+      border-color: #10b981;
+    }
+    
+    [data-theme="dark"] .alarm-indicator {
+      color: #a7f3d0;
+    }
+    
+    [data-theme="dark"] .alarm-details {
+      color: #cbd5e1;
+    }
+    
+    [data-theme="dark"] .background-status {
+      background: linear-gradient(135deg, #3b1e1e 0%, #451a03 100%);
+      border-color: #f97316;
+      color: #fff;
+    }
+    
+    [data-theme="dark"] .background-indicator {
+      color: #fed7aa;
+    }
+    
+    [data-theme="dark"] .background-note {
+      color: #94a3b8;
+    }
+    
+
+    /* 텍스트 오버플로우 방지 */
+    .status, .alarm-status, .background-status, .chrome-info, .stats-info, .update-guide-btn {
+      word-break: break-all;
+      white-space: normal;
+      line-height: 1.5;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+    input, button, .status, .alarm-status, .background-status, .chrome-info, .stats-info {
+      font-family: inherit;
+    }
+    
+    [data-theme="dark"] .countdown {
+      color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .btn-small {
+      background: #374151;
+      color: #e5e7eb;
+      border-color: #4b5563;
+    }
+    [data-theme="dark"] .btn-small:hover {
+      background: #4b5563;
+    }
+
+    [data-theme="dark"] .btn-primary {
+      background: #3b82f6;
+    }
+    [data-theme="dark"] .btn-secondary {
+      background: #4b5563;
+    }
+
+
+
+    [data-theme="dark"] #status {
+      background: #2d1e1e;
+      color: #fff;
+      border-left: 4px solid #ff5555;
+      font-weight: bold;
+    }
+    [data-theme="dark"] .update-guide-btn {
+      background: #e53e3e !important;
+      color: #fff !important;
+      border: 2px solid #b91c1c !important;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(229,62,62,0.15);
+    }
+
+    /* 다크 모드에서 회사명과 URL 색상 조정 */
+    [data-theme="dark"] .version-info strong {
+      color: #7c3aed !important;
+    }
+    
+    [data-theme="dark"] .version-info a {
+      color: #7c3aed !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="container">
+    <div class="connection-status" id="connectionStatus"></div>
+    
+    <div class="header">
+      <h3>🔄 크롬 자동 업데이트</h3>
+      <button class="theme-toggle" id="themeToggle" title="다크 모드 전환 (Alt+T)">🌙</button>
+    </div>
+    
+    <div class="chrome-info" id="chromeInfo">
+      크롬 버전 정보 로딩 중...
+    </div>
+    
+    <div class="form-group">
+      <label for="interval">업데이트 확인 주기 (초)</label>
+      <input id="interval" type="number" value="60" min="60" max="3600" placeholder="60~3600초" 
+             title="Enter 키로 시작, Escape 키로 중지" accesskey="i">
+      <div class="preset-buttons">
+        <button class="preset-btn" data-seconds="60" title="1분으로 설정 (Alt+1)">1분</button>
+        <button class="preset-btn" data-seconds="300" title="5분으로 설정 (Alt+2)">5분</button>
+        <button class="preset-btn" data-seconds="900" title="15분으로 설정 (Alt+3)">15분</button>
+        <button class="preset-btn" data-seconds="1800" title="30분으로 설정 (Alt+4)">30분</button>
+      </div>
+    </div>
+    
+    <div class="button-group">
+      <button id="start" class="btn-primary" title="자동 업데이트 시작 (Enter)" accesskey="s">
+        🚀 시작
+        <span class="shortcut-hint">Enter</span>
+      </button>
+      <button id="stop" class="btn-secondary" title="자동 업데이트 중지 (Escape)" accesskey="p">
+        ⏹️ 중지
+        <span class="shortcut-hint">Ctrl + Q</span>
+      </button>
+    </div>
+    
+    <button id="checkNow" class="btn-check" title="즉시 업데이트 확인 (Space)" accesskey="c">
+      <span id="checkNowText">🔍 지금 확인</span>
+      <span class="shortcut-hint">Space</span>
+    </button>
+    
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    
+    <div class="countdown" id="countdown"></div>
+    
+    <div id="status">준비 완료</div>
+    
+    <div class="settings-panel">
+      <div class="settings-buttons">
+        <button class="btn-small" id="exportSettings" title="설정 내보내기">📤 내보내기</button>
+        <button class="btn-small" id="importSettings" title="설정 가져오기">📥 가져오기</button>
+        <button class="btn-small" id="resetSettings" title="설정 초기화">🔄 초기화</button>
+        <button class="btn-small" id="openLogs" title="로그 보기">📋 로그</button>
+      </div>
+    </div>
+    
+    <div class="version-info">
+      ChromeAutoUpdate v1.0<br>
+      소속 회사: <strong style="color:#667eea;">갓루트(GOTROOT)</strong><br>
+      <a href="http://gotroot.co.kr/" target="_blank" style="color:#667eea; text-decoration:none; font-size:11px;">🌐 http://gotroot.co.kr/</a><br>
+      
+      <div class="stats-info" id="statsInfo"></div>
+      
+      <div class="accessibility-info">
+        키보드 단축키: Enter(시작), Esc(중지), Space(확인), Alt+T(테마)
+      </div>
+      <div class="dev-links" style="margin-top:10px; text-align:center;">
+        <a href="https://blog.naver.com/swm5048" target="_blank" style="color:#2563eb; font-weight:bold; text-decoration:none; margin-right:12px;">👨‍💻 개발자 블로그</a>
+        <a href="https://www.youtube.com/@DBDROP_%EB%94%94%EB%B9%84%EB%93%9C%EB%A1%AD" target="_blank" style="color:#ef4444; font-weight:bold; text-decoration:none;">🎬 YouTube</a>
+      </div>
+    </div>
+    
+  </div>
+
+  <input type="file" id="importFile" accept=".json" style="display: none;">
+  <script src="popup.js"></script>
+</body>
+</html>
